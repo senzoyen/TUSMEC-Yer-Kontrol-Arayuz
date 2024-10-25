@@ -25,69 +25,69 @@
         }
 
         #map {
-            height: 400px; /* Map height */
-            width: 60%; /* Map width */
-            border: 2px solid #ccc; /* Map border */
-            border-radius: 10px; /* Border radius */
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Shadow */
+            height: 400px;
+            width: 60%;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
 
         #controls {
             padding: 20px;
             background-color: #fff;
             border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Shadow */
-            margin-top: 20px; /* Margin above */
-            width: 60%; /* Same width as map */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+            width: 60%;
         }
 
         #content {
-            display: flex; /* Arrange map and drone info side by side */
+            display: flex;
             justify-content: center;
-            margin-top: 10px; /* Margin above */
-            width: 100%; /* Full width */
+            margin-top: 10px;
+            width: 100%;
         }
 
         #coordinates-container {
-            display: flex; /* Arrange coordinates list and camera feed side by side */
-            justify-content: center; /* Center the contents */
-            margin-top: 20px; /* Margin above */
-            width: 60%; /* Set width to match the map */
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            width: 60%;
         }
 
         #coordinates-list {
-            height: 200px; /* Coordinates list height */
+            height: 200px;
             padding: 20px;
             overflow-y: auto;
             background-color: #fff;
-            border: 2px solid #ccc; /* Border */
-            border-radius: 10px; /* Border radius */
-            width: 60%; /* Width of coordinates area set to match map width */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Shadow */
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            width: 60%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         #camera-feed {
             padding: 20px;
             background-color: #fff;
-            border: 2px solid #ccc; /* Border */
-            border-radius: 10px; /* Border radius */
-            width: 30%; /* Width of camera feed area */
-            height: 200px; /* Height of camera feed area */
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            width: 30%;
+            height: 200px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Shadow */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         #drone-info {
             padding: 20px;
             background-color: #fff;
-            border: 2px solid #ccc; /* Border */
-            border-radius: 10px; /* Border radius */
-            width: 30%; /* Width of drone info area */
-            margin-left: 20px; /* Margin on the right */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Shadow */
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            width: 30%;
+            margin-left: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         button {
@@ -96,13 +96,13 @@
             background-color: #007bff;
             color: white;
             border: none;
-            border-radius: 5px; /* Border radius */
+            border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s; /* Transition effect */
+            transition: background-color 0.3s;
         }
 
         button:hover {
-            background-color: #0056b3; /* Hover color */
+            background-color: #0056b3;
         }
 
         select, label {
@@ -131,7 +131,7 @@
                 <p id="drone-altitude">Altitude: 0 m</p>
                 <p id="drone-slope">Slope: 0°</p>
                 <p id="battery-status">Battery: 100%</p>
-                <p id="drone-mode">Mode: STABILIZE</p> <!-- Drone mode display -->
+                <p id="drone-mode">Mode: STABILIZE</p>
             </div>
         </div>
         <div id="controls">
@@ -149,95 +149,134 @@
                 <h2>Koordinatlar</h2>
                 <ul id="coordinates"></ul>
                 <button id="remove-markers">Pinleri Sil</button>
+                <!-- Save Coordinates button added here -->
+                <button id="save-coordinates">Koordinatları Kaydet</button>
             </div>
             <div id="camera-feed">
                 <h2>Kamera</h2>
                 <img id="camera-image" src="https://via.placeholder.com/150" alt="Camera Feed" />
+                <form id="coordinateForm">
+                    {% csrf_token %}
+                </form>
+                
             </div>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script>
-        var map = L.map('map').setView([51.505, -0.09], 13);
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+<script>
+    // Leaflet haritasını başlat
+    var map = L.map('map').setView([51.505, -0.09], 13);
 
-        // List to hold all markers
-        var markers = [];
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
-        // Drone modes
-        const droneModes = ["STABILIZE", "GUIDED", "ALT_HOLD", "LOITER", "LAND", "RTL", "ARM", "DISARM"];
+    // Harita üzerindeki tüm marker'ları tutacak liste
+    var markers = [];
 
-        function onMapClick(e) {
-            var lat = e.latlng.lat;
-            var lon = e.latlng.lng;
+    // Drone modları
+    const droneModes = ["STABILIZE", "GUIDED", "ALT_HOLD", "LOITER", "LAND", "RTL", "ARM", "DISARM"];
 
-            // Create marker and add to map
-            var marker = L.marker([lat, lon]).addTo(map);
-            marker.bindPopup("Latitude: " + lat + ", Longitude: " + lon).openPopup();
-            markers.push(marker);
-            addCoordinateToList(lat, lon);
-            updateDroneInfo(lat, lon); // Update drone info
-            updateCameraFeed(); // Update camera feed
+    // Haritaya tıklayınca marker ekleme fonksiyonu
+    function onMapClick(e) {
+        var lat = e.latlng.lat;
+        var lon = e.latlng.lng;
+
+        // Haritaya marker ekle ve pop-up göster
+        var marker = L.marker([lat, lon]).addTo(map);
+        marker.bindPopup("Latitude: " + lat + ", Longitude: " + lon).openPopup();
+        markers.push(marker); // Marker'ı markers dizisine ekle
+        addCoordinateToList(lat, lon); // Koordinatları listeye ekle
+        updateDroneInfo(lat, lon); // Drone bilgilerini güncelle
+        updateCameraFeed(); // Kamera beslemesini güncelle
+    }
+
+    // Haritaya tıklama olayını dinle
+    map.on('click', onMapClick);
+
+    // Koordinatları kaydetme butonuna tıklama olayı
+   $('#save-coordinates').click(function() {
+    var coordinates = markers.map(function(marker) {
+        return {
+            'latitude': marker.getLatLng().lat,
+            'longitude': marker.getLatLng().lng
+        };
+    });
+
+    $.ajax({
+        type: 'POST',
+        url: '/api/save_coordinate/',  // URL'yi güncelledik
+        data: {
+            'coordinates': JSON.stringify(coordinates),
+            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val()  // CSRF token burada
+        },
+        success: function(response) {
+            console.log('Success:', response);
+        },
+        error: function(xhr, status, error) {
+            console.error('Error:', error);
         }
+    });
+});
 
-        function addCoordinateToList(lat, lon) {
-            var coordinatesList = document.getElementById('coordinates');
-            var listItem = document.createElement('li');
-            listItem.className = 'coordinate-item';
-            listItem.textContent = `Latitude: ${lat}, Longitude: ${lon}`;
-            coordinatesList.appendChild(listItem);
-        }
+    
 
-        function removeAllMarkers() {
-            markers.forEach(function(marker) {
-                map.removeLayer(marker);
-            });
-            markers = [];
-            document.getElementById('coordinates').innerHTML = '';
-        }
+    // Koordinatları listeye ekleme fonksiyonu
+    function addCoordinateToList(lat, lon) {
+        var coordinatesList = document.getElementById('coordinates');
+        var listItem = document.createElement('li');
+        listItem.className = 'coordinate-item';
+        listItem.textContent = `Latitude: ${lat}, Longitude: ${lon}`;
+        coordinatesList.appendChild(listItem);
+    }
 
-        // Event listener for "Remove All Markers" button
-        document.getElementById('remove-markers').addEventListener('click', removeAllMarkers);
-
-        // Event listener for the assign task button
-        document.getElementById('assign-task').addEventListener('click', function() {
-            var selectedTask = document.getElementById('task-select').value;
-            if (selectedTask) {
-                alert("Task assigned: " + selectedTask);
-                updateDroneStatus(selectedTask); // Update drone status
-            } else {
-                alert("Please select a task.");
-            }
+    // Tüm marker'ları silme fonksiyonu
+    function removeAllMarkers() {
+        markers.forEach(function(marker) {
+            map.removeLayer(marker);
         });
+        markers = [];
+        document.getElementById('coordinates').innerHTML = '';
+    }
 
-        // Function to update drone status
-        function updateDroneStatus(selectedTask) {
-            // Add code to update drone status here
-            // For example, you can randomly select one of the modes
-            var randomMode = droneModes[Math.floor(Math.random() * droneModes.length)];
-            document.getElementById('drone-mode').textContent = "Mode: " + randomMode;
+    // Tüm marker'ları silme butonuna tıklama olayı
+    document.getElementById('remove-markers').addEventListener('click', removeAllMarkers);
+
+    // Görev atama butonuna tıklama olayı
+    document.getElementById('assign-task').addEventListener('click', function() {
+        var selectedTask = document.getElementById('task-select').value;
+        if (selectedTask) {
+            alert("Task assigned: " + selectedTask);
+            updateDroneStatus(selectedTask); // Drone modunu güncelle
+        } else {
+            alert("Please select a task.");
         }
+    });
 
-        // Function to update drone info
-        function updateDroneInfo(lat, lon) {
-            document.getElementById('current-latitude').textContent = "Latitude: " + lat.toFixed(2);
-            document.getElementById('current-longitude').textContent = "Longitude: " + lon.toFixed(2);
-            document.getElementById('drone-speed').textContent = "Speed: " + (Math.random() * 10).toFixed(2) + " m/s"; // Random speed
-            document.getElementById('drone-altitude').textContent = "Altitude: " + (Math.random() * 100).toFixed(2) + " m"; // Random altitude
-            document.getElementById('drone-slope').textContent = "Slope: " + (Math.random() * 90).toFixed(2) + "°"; // Random slope
-            document.getElementById('battery-status').textContent = "Battery: " + Math.floor(Math.random() * 100) + "%"; // Random battery status
-        }
+    // Drone durumunu güncelleme fonksiyonu
+    function updateDroneStatus(selectedTask) {
+        var randomMode = droneModes[Math.floor(Math.random() * droneModes.length)];
+        document.getElementById('drone-mode').textContent = "Mode: " + randomMode;
+    }
 
-        // Function to update camera feed
-        function updateCameraFeed() {
-            document.getElementById('camera-image').src = "https://via.placeholder.com/150?text=Camera+Feed+" + (Math.floor(Math.random() * 10) + 1);
-        }
+    // Drone bilgilerini güncelleme fonksiyonu
+    function updateDroneInfo(lat, lon) {
+        document.getElementById('current-latitude').textContent = "Latitude: " + lat.toFixed(2);
+        document.getElementById('current-longitude').textContent = "Longitude: " + lon.toFixed(2);
+        document.getElementById('drone-speed').textContent = "Speed: " + (Math.random() * 10).toFixed(2) + " m/s"; // Rastgele hız
+        document.getElementById('drone-altitude').textContent = "Altitude: " + (Math.random() * 100).toFixed(2) + " m"; // Rastgele irtifa
+        document.getElementById('drone-slope').textContent = "Slope: " + (Math.random() * 90).toFixed(2) + "°"; // Rastgele eğim
+        document.getElementById('battery-status').textContent = "Battery: " + Math.floor(Math.random() * 100) + "%"; // Rastgele batarya durumu
+    }
 
-        map.on('click', onMapClick);
-    </script>
+    // Kamera beslemesini güncelleme fonksiyonu
+    function updateCameraFeed() {
+        document.getElementById('camera-image').src = "https://via.placeholder.com/150?text=Camera+Feed+" + (Math.floor(Math.random() * 10) + 1);
+    }
+</script>
+
 </body>
 </html>
