@@ -9,7 +9,7 @@ from .models import Coordinate
 from .serializer import CoordinateSerializer
 
 # Arduino bağlantısını başlatıyoruz (port numarasını kendi sisteminize göre ayarlayın)
-arduino = serial.Serial('COM7', 9600, timeout=1)
+#arduino = serial.Serial('COM7', 9600, timeout=1)
 
 @api_view(['POST'])
 def save_coordinate(request):
@@ -21,8 +21,8 @@ def save_coordinate(request):
         print(f"Latitude: {coord['latitude']}, Longitude: {coord['longitude']}")
         
         # Koordinatları Arduino’ya göndermek için CSV formatına çeviriyoruz
-        message = f"{coord['latitude']},{coord['longitude']}\n"
-        arduino.write(message.encode())  # Veriyi Arduino'ya gönderiyoruz
+    #    message = f"{coord['latitude']},{coord['longitude']}\n"
+ #       arduino.write(message.encode())  # Veriyi Arduino'ya gönderiyoruz
         time.sleep(1)  # Arduino'nun veriyi işleyebilmesi için bekliyoruz
     
     # Koordinatları veritabanına kaydetmek için serializer'ı kullanıyoruz
