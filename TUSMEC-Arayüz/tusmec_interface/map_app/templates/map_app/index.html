@@ -142,6 +142,8 @@
                 <option value="delivery">Kare-1</option>
                 <option value="mapping">Kare-2</option>
             </select>
+
+            <button id="assign-task">Görev Atama</button>
             
             <!-- Drone Modları ComboBox -->
             <label for="mode-select">Dron Modunu Seç:</label>
@@ -156,7 +158,11 @@
                 <option value="DISARM">DISARM</option>
             </select>
 
-            <button id="assign-task">Görev Atama</button>
+            <button id="sendSelectedMode">Mod Seç</button>
+
+            <!-- CSRF Token -->
+            <input type="hidden" id="csrfToken" value="{{ csrf_token }}">
+            
         </div>
         <div id="coordinates-container">
             <div id="coordinates-list">
@@ -231,6 +237,36 @@
             }
         });
     });
+
+
+    $('#sendSelectedMode').click(function() {
+        var selectedMode = $("#mode-select option:selected").text(); // Doğru seçici
+        var csrf_token = $('[name=csrfmiddlewaretoken]').val(); // CSRF token alımı
+    
+        alert(selectedMode);
+    
+        // AJAX isteği
+        $.ajax({
+            type: 'POST',
+            url: '/api/save_coordinate/',
+            data: {
+                'selectedMode': selectedMode, // JSON.stringify gerekmez çünkü text gönderiyorsunuz
+                'csrfmiddlewaretoken': csrf_token
+            },
+            success: function(response) {
+                console.log('Başarılı:', response);
+            },
+            error: function(xhr, status, error) {
+                console.error('Hata:', error);
+            }
+        });
+    });
+    
+    
+
+    
+
+
 
         // Koordinatları listeye ekleme fonksiyonu
         function addCoordinateToList(lat, lon) {
