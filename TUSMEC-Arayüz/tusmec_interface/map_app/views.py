@@ -1,43 +1,67 @@
 import serial
-import time
 import json
 
 from django.shortcuts import render
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from .models import Coordinate
-from .serializer import CoordinateSerializer
 
 # Arduino bağlantısını başlatıyoruz (port numarasını kendi sisteminize göre ayarlayın)
-arduino = serial.Serial('COM5', 9600, timeout=1)
+arduino = serial.Serial('/dev/ttyACM3', 9600, timeout=1)
 
 @api_view(['POST'])
 def save_coordinate(request):
-    # İstekten gelen JSON formatındaki koordinatları alıyoruz
-    coordinates = json.loads(request.POST.get('coordinates', '[]'))
-    
-    selected_mode = request.data.get('selectedMode', 'default')
+    try:
+        # İstekten gelen veriler
+        data_type = request.data.get('dataType', 'default')
+        selected_task = request.data.get('selectedTask', 'default')
+        selected_mode = request.data.get('selectedMode', 'default')
 
-    print(f"Seçilen Mod: {selected_mode}")
-    
-    # Koordinatları LoRa üzerinden göndermek için formatlıyoruz ve gönderiyoruz
-    for coord in coordinates:
-        print(f"Latitude: {coord['latitude']}, Longitude: {coord['longitude']}")
-        
-        # Koordinatları Arduino’ya göndermek için CSV formatına çeviriyoruz
-        message = f"{coord['latitude']},{coord['longitude']}\n"
-        arduino.write(message.encode())  # Veriyi Arduino'ya gönderiyoruz
-        print("gönderildi")
-        time.sleep(1)  # Arduino'nun veriyi işleyebilmesi için bekliyoruz
-    
-    # Koordinatları veritabanına kaydetmek için serializer'ı kullanıyoruz
-    serializer = CoordinateSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data)
-    
-    # Eğer veriler geçerli değilse, hata mesajını döndürüyoruz
-    return Response(serializer.errors, status=400)
+        print(f"Veri Tipi: {data_type}")
+        print(f"Seçilen Görev: {selected_task}")
+        print(f"Seçilen Mod: {selected_mode}")
+
+        if data_type == "coordinate":
+            coordinates = json.loads(request.data.get('coordinates', '[]'))
+            # Koordinatları LoRa üzerinden göndermek için formatlıyoruz
+            coordinate_messages = []
+            for coordinate in coordinates:
+                latitude = coordinate['latitude']
+                longitude = coordinate['longitude']
+                coordinate_messages.append(f"{latitude},{longitude}")
+                print(f"Gelen veri: {latitude},{longitude}")
+            # Tüm koordinatları tek bir mesajda virgülle ayırarak birleştiriyoruz
+            message = ",".join(coordinate_messages) + "\n"
+            print(f"Tüm koordinatlar: {message}")
+            # Tüm koordinatları Arduino'ya bir kerede gönderiyoruz
+            arduino.write(message.encode())
+            print("Koordinatlar gönderildi")
+
+        elif data_type == "task":
+            arduino.write(selected_task.encode())
+            print("Görev bilgisi gönderildi")
+
+        elif data_type == "mode":
+            arduino.write(selected_mode.encode())
+            print("Mod bilgisi gönderildi")
+
+        # Arduino'dan gelen veriyi okuyoruz
+        incoming_data = arduino.readline().decode().strip()
+        print(f"Arduino'dan gelen veri: {incoming_data}")
+
+        # Başarılı yanıt döndür
+        return Response({
+            "status": "success",
+            "message": "Veriler işlendi ve Arduino'ya gönderildi",
+            "incoming_data": incoming_data
+        }, status=200)
+
+    except Exception as e:
+        # Hata durumunda yanıt döndür
+        print(f"Hata: {str(e)}")
+        return Response({
+            "status": "error",
+            "message": f"Hata oluştu: {str(e)}"
+        }, status=500)
 
 def index(request):
     return render(request, 'map_app/index.html')
